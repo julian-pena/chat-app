@@ -1,32 +1,33 @@
 package com.chat.app.model;
 
-import com.chat.app.model.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
-@Document(collection = "users")
+@Document(collection = "messages")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserDocument {
+public class Message {
 
     @Id
-    String userId;
+    String id;
 
-    @Field("username")
-    String userName;
+    @Field("sender_id")
+    @Indexed
+    String senderId;
 
-    String password;
+    String content;
 
-    @Field("rol")
-    UserRole userRole;
+    @Field("timestamp")
+    LocalDateTime timeStamp;
 
 }
