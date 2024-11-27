@@ -1,9 +1,9 @@
 package com.chat.app.controller;
 
 import com.chat.app.config.security.userdetails.UserDetailsServiceImpl;
-import com.chat.app.model.dto.UserInfoDTO;
-import com.chat.app.model.dto.UserLoginRequest;
-import com.chat.app.model.dto.UserRegistrationDTO;
+import com.chat.app.model.dto.user.UserInfoDTO;
+import com.chat.app.model.dto.user.UserLoginRequest;
+import com.chat.app.model.dto.user.UserRegistrationDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -99,7 +100,7 @@ public class AuthController {
             )
     })
     @PostMapping("/register")
-    public ResponseEntity<UserInfoDTO> registerUser(@RequestBody UserRegistrationDTO userRegistrationDTO, UriComponentsBuilder uriComponentsBuilder){
+    public ResponseEntity<UserInfoDTO> registerUser(@RequestBody @Valid UserRegistrationDTO userRegistrationDTO, UriComponentsBuilder uriComponentsBuilder){
         UserInfoDTO userDTO = userDetailsService.registerUser(userRegistrationDTO);
         URI url = uriComponentsBuilder.path("/users/{id}").buildAndExpand(userDTO.id()).toUri();
         return ResponseEntity.created(url).body(userDTO);
@@ -191,7 +192,7 @@ public class AuthController {
             )
     })
     @PostMapping("/login")
-    public ResponseEntity<UserInfoDTO> loginUser(@RequestBody UserLoginRequest loginRequest){
+    public ResponseEntity<UserInfoDTO> loginUser(@RequestBody @Valid UserLoginRequest loginRequest){
         return new ResponseEntity<>(userDetailsService.loginUser(loginRequest), HttpStatus.OK);
     }
 

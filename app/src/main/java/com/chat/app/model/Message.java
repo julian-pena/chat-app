@@ -30,4 +30,6 @@ public class Message {
     @Field("timestamp")
     LocalDateTime timeStamp;
 
+
+
 }

@@ -2,9 +2,9 @@ package com.chat.app.config.security.userdetails;
 
 import com.chat.app.config.security.jwt.JwtUtils;
 import com.chat.app.model.UserDocument;
-import com.chat.app.model.dto.UserInfoDTO;
-import com.chat.app.model.dto.UserLoginRequest;
-import com.chat.app.model.dto.UserRegistrationDTO;
+import com.chat.app.model.dto.user.UserInfoDTO;
+import com.chat.app.model.dto.user.UserLoginRequest;
+import com.chat.app.model.dto.user.UserRegistrationDTO;
 import com.chat.app.model.enums.UserRole;
 import com.chat.app.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,14 +42,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserDocument user = userRepository.findByUserName(username)
+        UserDocument user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User " + username + " not found "));
 
         List<SimpleGrantedAuthority> simpleGrantedAuthorities = new ArrayList<>();
         simpleGrantedAuthorities.add(new SimpleGrantedAuthority(("ROLE_".concat(user.getUserRole().name()))));
 
         return new User(
-                user.getUserName(),
+                user.getUsername(),
                 user.getPassword(),
                 true, // isEnabled
                 true, // isAccountNonExpired
@@ -61,17 +61,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 
     public UserInfoDTO registerUser(UserRegistrationDTO userRegistrationDTO) {
-        userNameInUse(userRegistrationDTO.userName());
+        userNameInUse(userRegistrationDTO.username());
 
         UserDocument user = UserDocument.builder()
-                .userName(userRegistrationDTO.userName())
+                .username(userRegistrationDTO.username())
                 .password(passwordEncoder.encode(userRegistrationDTO.password()))
-                .userRole(UserRole.valueOf(userRegistrationDTO.rol()))
+                .userRole(UserRole.valueOf(userRegistrationDTO.role()))
                 .build();
 
         user = userRepository.save(user);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -79,9 +79,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         return UserInfoDTO.builder()
                 .id(user.getUserId())
-                .userName(user.getUserName())
+                .userName(user.getUsername())
                 .token(accessToken)
-                .rol(user.getUserRole().toString())
+                .role(user.getUserRole().toString())
                 .build();
     }
 
@@ -107,7 +107,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         String accessToken = jwtUtils.createToken(authentication);
 
         // Get ID from user
-        UserDocument userDocument = userRepository.findByUserName(userName)
+        UserDocument userDocument = userRepository.findByUsername(userName)
                 .orElseThrow(() -> new UsernameNotFoundException("User " + userName + " not found "));
 
         String userId = userDocument.getUserId();
@@ -116,7 +116,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .id(userId)
                 .userName(userName)
                 .token(accessToken)
-                .rol(authority)
+                .role(authority)
                 .build();
     }
 
@@ -135,7 +135,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 
     private void userNameInUse (String userName) {
-        if (userRepository.findByUserName(userName).isPresent())
-            throw new UsernameNotFoundException("Email en uso");
+        if (userRepository.findByUsername(userName).isPresent())
+            throw new UsernameNotFoundException("Username already in use");
     }
 }

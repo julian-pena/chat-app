@@ -1,4 +1,4 @@
-package com.chat.app.model.dto;
+package com.chat.app.model.dto.user;
 
 import lombok.Builder;
 
@@ -6,5 +6,5 @@ import lombok.Builder;
 public record UserInfoDTO(String id,
                           String userName,
                           String token,
-                          String rol) {
+                          String role) {
 }
