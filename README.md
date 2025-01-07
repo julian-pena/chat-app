@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="project-banner.png" alt="Chat App Tech Stack - Spring Boot, MongoDB" width="400"/>
+  <img src="https://github.com/user-attachments/assets/b589e78d-771b-4928-bd23-a448d625bd7f" alt="Chat App Tech Stack - Spring Boot, MongoDB" width="200" height="200"/>
 </div>
 
 # Real-Time Chat Application
