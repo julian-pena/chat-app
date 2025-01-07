@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Admin Dashboard</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" th:href="@{/css/admin.css}" />
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+<div class="dashboard-container">
+  <div class="header">
+    <h1>Admin Dashboard</h1>
+    <a href="/chat/home" class="back-to-chat">Back to Chat</a>
+  </div>
+
+  <div class="nav-tabs">
+    <button onclick="showSection('history')" class="active">Message History</button>
+    <button onclick="showSection('users')">Users</button>
+  </div>
+
+  <!-- Message History Section -->
+  <div id="history-section" class="section active">
+    <div class="section-header">
+      <h2>Message History</h2>
+      <div>
+        <button onclick="fetchHistory()" class="button refresh-button">Refresh Messages</button>
+        <button onclick="confirmDeleteMessages()" class="button delete-button">Delete All Messages</button>
+      </div>
+    </div>
+    <div id="message-history">
+      <!-- Messages will be loaded here -->
+    </div>
+  </div>
+
+  <!-- Users Section -->
+  <div id="users-section" class="section">
+    <div class="section-header">
+      <h2>Users Management</h2>
+      <button onclick="fetchUsers()" class="button refresh-button">Refresh Users</button>
+    </div>
+    <div id="user-list" class="user-list">
+      <!-- Users will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="confirmation-modal">
+  <div class="modal-content">
+    <p id="confirmation-message"></p>
+    <div class="modal-buttons">
+      <button onclick="cancelDelete()" class="button back-to-chat">Cancel</button>
+      <button id="confirm-delete-button" class="button delete-button">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  let stompClient = null;
+
+  function connect() {
+    const socket = new SockJS('/ws-chat');
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function(frame) {
+      console.log('Connected to WebSocket');
+
+      // Subscribe to message history
+      stompClient.subscribe('/topic/admin/history', function(response) {
+        const messages = JSON.parse(response.body);
+        displayMessages(messages);
+      });
+
+      // Subscribe to new chat messages
+      stompClient.subscribe('/topic/messages', function(response) {
+        fetchHistory();
+      });
+
+      // Subscribe to user updates
+      stompClient.subscribe('/topic/admin/users', function(response) {
+        const users = JSON.parse(response.body);
+        displayUsers(users);
+      });
+
+      // Initial fetch
+      fetchHistory();
+      fetchUsers();
+    });
+  }
+
+  function fetchHistory() {
+    if (stompClient && stompClient.connected) {
+      stompClient.send("/app/admin.fetchHistory", {}, {});
+    } else {
+      console.log("WebSocket not connected. Attempting to reconnect...");
+      connect();
+    }
+  }
+
+  function fetchUsers() {
+    if (stompClient && stompClient.connected) {
+      stompClient.send("/app/admin.fetchUsers", {}, {});
+    }
+  }
+
+  function displayMessages(messages) {
+    const historyDiv = document.getElementById('message-history');
+    historyDiv.innerHTML = '';
+
+    if (messages.length === 0) {
+      historyDiv.innerHTML = '<p style="text-align: center; color: #666;">No messages yet</p>';
+      return;
+    }
+
+    messages.forEach(message => {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message-item';
+
+      messageDiv.innerHTML = `
+        <span class="timestamp">${message.timestamp}</span>
+        <span class="sender">${message.sender}</span>
+        <span class="content">${message.content}</span>
+      `;
+
+      historyDiv.appendChild(messageDiv);
+    });
+
+    historyDiv.scrollTop = historyDiv.scrollHeight;
+  }
+
+  function displayUsers(users) {
+    const userList = document.getElementById('user-list');
+    userList.innerHTML = '';
+
+    if (users.length === 0) {
+      userList.innerHTML = '<p style="text-align: center; color: #666;">No users found</p>';
+      return;
+    }
+
+    users.forEach(user => {
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+
+      userItem.innerHTML = `
+        <div class="user-info">
+          <span class="user-name">${user.userName}</span>
+          <span class="user-role">${user.role}</span>
+        </div>
+        <button onclick="confirmDeleteUser('${user.id}', '${user.userName}')"
+                class="button delete-button">
+          Delete User
+        </button>
+      `;
+
+      userList.appendChild(userItem);
+    });
+  }
+
+  function showSection(sectionName) {
+    document.querySelectorAll('.section').forEach(section => {
+      section.classList.remove('active');
+    });
+
+    document.getElementById(`${sectionName}-section`).classList.add('active');
+
+    document.querySelectorAll('.nav-tabs button').forEach(button => {
+      button.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    if (sectionName === 'users') {
+      fetchUsers();
+    }
+  }
+
+  // Delete functionality
+  function confirmDeleteUser(userId, userName) {
+    showConfirmationModal(
+      `Are you sure you want to delete user "${userName}"?`,
+      () => deleteUser(userId)
+    );
+  }
+
+  function confirmDeleteMessages() {
+    showConfirmationModal(
+      'Are you sure you want to delete all messages?',
+      deleteAllMessages
+    );
+  }
+
+  function showConfirmationModal(message, onConfirm) {
+    const modal = document.getElementById('confirmation-modal');
+    document.getElementById('confirmation-message').textContent = message;
+    document.getElementById('confirm-delete-button').onclick = () => {
+      onConfirm();
+      hideConfirmationModal();
+    };
+    modal.style.display = 'flex';
+  }
+
+  function hideConfirmationModal() {
+    document.getElementById('confirmation-modal').style.display = 'none';
+  }
+
+  function cancelDelete() {
+    hideConfirmationModal();
+  }
+
+  function deleteUser(userId) {
+    if (stompClient && stompClient.connected) {
+      stompClient.send("/app/admin.deleteUser", {}, userId);
+    }
+  }
+
+  function deleteAllMessages() {
+    if (stompClient && stompClient.connected) {
+      stompClient.send("/app/admin.deleteMessages", {}, {});
+    }
+  }
+
+  // Reconnection logic
+  let reconnectAttempt = 0;
+  const maxReconnectAttempts = 5;
+
+  function attemptReconnect() {
+    if (reconnectAttempt < maxReconnectAttempts) {
+      reconnectAttempt++;
+      console.log(`Attempting to reconnect... (${reconnectAttempt}/${maxReconnectAttempts})`);
+      connect();
+    }
+  }
+
+  window.onload = connect;
+</script>
+</body>
+</html>

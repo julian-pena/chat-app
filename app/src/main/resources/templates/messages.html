@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Chat</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+<div id="chat-page">
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chat App</h2>
+            <div class="header-buttons">
+                <span th:if="${isAdmin}">
+                    <a href="/admin/dashboard" class="admin-btn">Dashboard</a>
+                </span>
+                <form action="/auth/logout" method="POST" style="margin: 0; display: inline-block;">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="chat-content">
+            <div class="active-users-sidebar">
+                <h3>Active Users</h3>
+                <ul id="activeUsersList"></ul>
+            </div>
+
+            <div class="messages-container">
+                <ul id="messages"></ul>
+
+                <form id="messageForm" name="messageForm">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" placeholder="Type a message..." class="form-control"/>
+                        <button type="button" class="primary" onclick="sendMessage()">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<span id="usernameField" th:text="${username}" style="display:none;"></span>
+
+<script>
+    var stompClient = null;
+    var username = document.getElementById('usernameField').textContent.trim();
+
+    // Función para generar color aleatorio
+    function getRandomColor() {
+        const colors = [
+            '#2196F3', '#32c787', '#00BCD4', '#ff5652',
+            '#ffc107', '#ff85af', '#FF9800', '#39bbb0',
+            '#4CAF50', '#7C4DFF', '#E91E63', '#795548'
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // Objeto para mantener colores consistentes por usuario
+    const userColors = {};
+
+    function getUserColor(userName) {
+        if (!userColors[userName]) {
+            userColors[userName] = getRandomColor();
+        }
+        return userColors[userName];
+    }
+
+    function connect() {
+        var socket = new SockJS('/ws-chat');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            // Suscribirse a mensajes
+            stompClient.subscribe('/topic/messages', function (messageOutput) {
+                showMessage(JSON.parse(messageOutput.body));
+            });
+
+            // Suscribirse a actualizaciones de usuarios
+            stompClient.subscribe('/topic/users', function (usersOutput) {
+                const users = JSON.parse(usersOutput.body);
+                console.log('Users update received:', users);
+                updateActiveUsersList(users);
+            });
+
+            // Notificar conexión del usuario
+            stompClient.send("/app/chat.addUser", {}, JSON.stringify({
+                userName: username
+            }));
+        });
+    }
+
+    function sendMessage() {
+        var messageContent = document.getElementById('messageInput').value;
+        if (messageContent && stompClient) {
+            var message = {
+                content: messageContent
+            };
+            stompClient.send("/app/chat", {}, JSON.stringify(message));
+            document.getElementById('messageInput').value = '';
+        }
+    }
+
+    function showMessage(message) {
+        var messagesList = document.getElementById('messages');
+        var messageItem = document.createElement('li');
+
+        if (message.type === 'JOIN' || message.type === 'LEAVE') {
+            messageItem.classList.add('event-message');
+            messageItem.innerHTML = '<p>' + message.content + '</p>';
+        } else {
+            messageItem.classList.add('chat-message');
+            const userColor = getUserColor(message.sender);
+            const initial = message.sender.charAt(0).toUpperCase();
+
+            messageItem.innerHTML = `
+                    <div class="user-avatar" style="background-color: ${userColor}">
+                        ${initial}
+                    </div>
+                    <div class="message-content">
+                        <span>${message.sender}</span>
+                        <p>${message.content}</p>
+                    </div>
+                `;
+        }
+
+        messagesList.appendChild(messageItem);
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    window.onload = connect;
+
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    function updateActiveUsersList(users) {
+        const usersList = document.getElementById('activeUsersList');
+        usersList.innerHTML = '';
+
+        if (!users) return;
+
+        const userArray = Array.isArray(users) ? users : Object.values(users);
+
+        userArray.forEach(user => {
+            const li = document.createElement('li');
+            const userColor = getUserColor(user);
+            li.style.color = userColor;
+            li.textContent = user;
+            usersList.appendChild(li);
+        });
+    }
+</script>
+</body>
+</html>

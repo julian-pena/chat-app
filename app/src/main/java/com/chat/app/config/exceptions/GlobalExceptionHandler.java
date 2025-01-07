@@ -1,4 +1,4 @@
-package com.chat.app.config;
+package com.chat.app.config.exceptions;
 
 import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
