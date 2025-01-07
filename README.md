@@ -125,5 +125,7 @@ Feel free to fork the repository and submit pull requests.
 
 ## Contact
 
-[Add your contact information here]
+Julian David Peña Rojas - julianpr8@hotmail.com
+
+Project Link: [https://github.com/julian-pena/chat-app](https://github.com/julian-pena/chat-app)
 
