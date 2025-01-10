@@ -1,8 +1,11 @@
 FROM openjdk:17-jdk AS build
 WORKDIR /app
 
-# Copy all files from current directory
-COPY . .
+# Copy files from the local directory (where Dockerfile is)
+COPY src ./src
+COPY .mvn ./.mvn
+COPY pom.xml .
+COPY mvnw .
 
 # Set execution permission for Maven wrapper and run build
 RUN chmod +x ./mvnw
