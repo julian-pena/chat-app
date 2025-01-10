@@ -36,8 +36,8 @@ body {
 /* Formularios y controles */
 .form-control {
     width: 100%;
-    min-height: 38px;
-    font-size: 15px;
+    min-height: 50px;
+    font-size: 16px;
     border: 1px solid #c8c8c8;
 }
 
@@ -313,19 +313,25 @@ button.accent {
 
 /* Formulario de mensajes */
 #chat-page #messageForm {
-    padding: 20px;
+    padding: 25px 30px; /* Aumentado de 20px */
 }
+
+
 
 #messageForm .input-group input {
     float: left;
-    width: calc(100% - 85px);
+    width: calc(100% - 120px); /* Ajustado para el botón más grande */
+    height: 50px; /* Aumentado para coincidir con min-height del form-control */
+    font-size: 16px;
+    padding: 10px 15px;
 }
 
 #messageForm .input-group button {
     float: left;
-    width: 80px;
-    height: 38px;
-    margin-left: 5px;
+    width: 110px; /* Aumentado de 80px */
+    height: 50px; /* Aumentado de 38px */
+    margin-left: 10px; /* Aumentado de 5px */
+    font-size: 16px; /* Aumentado de 14px */
 }
 
 /* Estado de conexión */
