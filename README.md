@@ -8,7 +8,7 @@ A real-time chat application built with Spring Boot that enables instant messagi
 
 ## Demo
 
-🔗 [Try the live demo](https://chat-app.koyeb.app)
+🔗 [Try the live demo](https://christian-fara-myprojects-julianp-58b37b45.koyeb.app/auth/login)
 
 ## Features
 
@@ -119,9 +119,6 @@ The application implements security measures using Spring Security, including:
 
 Feel free to fork the repository and submit pull requests.
 
-## License
-
-[Add your chosen license here]
 
 ## Contact
 
